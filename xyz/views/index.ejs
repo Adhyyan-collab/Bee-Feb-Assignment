@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Bazaar Inventory</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        input, button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .book-list {
+            margin-top: 20px;
+        }
+        .book-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Book Bazaar Inventory</h1>
+
+    <div class="container">
+        <h3>Add a New Book</h3>
+        <form id="bookForm">
+            <input type="text" id="title" name="title" placeholder="Title" required>
+            <input type="text" id="author" name="author" placeholder="Author" required>
+            <input type="number" id="price" name="price" placeholder="Price" required>
+            <button type="submit">Add Book</button>
+        </form>
+
+        <h3>Book List</h3>
+        <div class="book-list" id="book-list"></div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:3001";
+
+        // Fetch and display all books
+        function fetchBooks() {
+            fetch(`${API_URL}/books`)
+                .then(res => res.json())
+                .then(data => {
+                    let bookList = document.getElementById("book-list");
+                    bookList.innerHTML = ""; // Clear list
+
+                    data.forEach(book => {
+                        let bookDiv = document.createElement("div");
+                        bookDiv.classList.add("book-item");
+                        bookDiv.innerHTML = `
+                            <span><strong>${book.title}</strong> by ${book.author} - $${book.price}</span>
+                            <button class="delete-btn" onclick="deleteBook(${book.id})">Delete</button>
+                        `;
+                        bookList.appendChild(bookDiv);
+                    });
+                });
+        }
+
+        // Add a new book
+        document.getElementById("bookForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            let title = document.getElementById("title").value;
+            let author = document.getElementById("author").value;
+            let price = parseFloat(document.getElementById("price").value);
+
+            if (!title || !author || isNaN(price) || price <= 0) {
+                alert("All fields are required and price must be a positive number.");
+                return;
+            }
+
+            fetch(`${API_URL}/add`, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&price=${price}`
+            })
+            .then(() => {
+                document.getElementById("bookForm").reset();
+                fetchBooks();
+            });
+        });
+
+        // Delete a book
+        function deleteBook(id) {
+            fetch(`${API_URL}/delete/${id}`, { method: "POST" }) // ✅ Corrected route
+                .then(() => fetchBooks());
+        }
+
+        // Initial load
+        fetchBooks();
+    </script>
+
+</body>
+</html>
